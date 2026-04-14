@@ -3,7 +3,6 @@
 from typing import ClassVar, Literal
 from pydantic import Field
 from sandbox_ingest import ogr_model
-import ros_cadastral_parcels_definition
 
 # --- Schema field models (describe what ogrinfo reports about each field) ---
 
