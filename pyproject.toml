@@ -1,0 +1,27 @@
+[project]
+name = "dummy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "sandbox_ingest",
+        "playwright>=1.50.0",
+]
+
+[tool.uv.sources]
+sandbox_ingest = { path = "../ingest-prototype", editable = true }
+
+[tool.mypy]
+mypy_path = "../ingest-prototype"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "black>=26.3.1",
+    "flake8>=7.3.0",
+    "pylint>=4.0.5",
+    "mypy>=1.20.0",
+]
+
+

@@ -1,0 +1,26 @@
+dataset: RoS Cadastral Parcels (INSPIRE)
+last_tested: 2026-04-01
+tester: PP
+
+raw_size: 734MB 
+format: Shapefile
+postgis_size: 3.1 GB
+ingestion_time: 8 minutes
+native_format: Shapefile (.shp)
+native_epsg: 
+ - 27700
+ - 4326
+unique_id: "inspireid"
+example_id: "gb.ros.lr.SCT0005504803"
+id_stability: Changed in 2024 (see RoS changelog)
+coverage_gaps: ~30% of Land Register titles missing
+licence: INSPIRE End User Licence
+ingestion_method_tested: ogr2ogr
+
+key_findings:
+  - ETRS89 & BNG subset means duplicated data (real data set is ~360Mb)
+  - Full replacement ingestion is safest (avoid partial uploads)
+  - Need change detection logic if incremental refresh required
+  - Licence precludes commercial use without separate agreement
+
+blocking_issues: Commercial licence required for production use
