@@ -28,7 +28,7 @@ class CadastralParcelField(ogr_model.OGRField):
 class CadastralParcelGeometryField(ogr_model.GeometryField):
     """Valid geometry field name reported by ogrinfo for the ABN_bng layer."""
 
-    name: Literal["_ogr_geometry_", ""]
+    name: Literal["wkb_geometry", ""]  # OGR transforms frmo "" to wkb_geometry
 
 
 # --- Layer model ---
@@ -42,7 +42,6 @@ class CadastralParcelLayer(ogr_model.OGRLayer):
     geometry_fields: list[CadastralParcelGeometryField] = Field(alias="geometryFields")
     geometry_type: ClassVar[str] = "POLYGON"
     value_constraints: ClassVar[dict[str, list[str]]] = {}
-    #data_type: ClassVar = ros_cadastral_parcels_definition.CadastralParcel
 
 
 ROSCadastralParcelsInfo = ogr_model.OGRInfo[CadastralParcelLayer]

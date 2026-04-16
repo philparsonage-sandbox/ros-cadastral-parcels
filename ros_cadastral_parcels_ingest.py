@@ -50,6 +50,10 @@ _JS_CLICK_SUBMIT = """() => {
 
 
 def _launch_browser(p: Playwright) -> tuple[Browser, Page]:
+    """Launch a headless Chromium browser with downloads enabled.
+
+    Returns a (Browser, Page) tuple ready for navigation.
+    """
     browser = p.chromium.launch(
         headless=True,
         args=[
@@ -250,44 +254,47 @@ class ParcelUpdater(OGRUpdater):
             ROSCadastralParcelsInfo,
             [ros_cadastral_parcels_definition.CadastralParcel],
             [CadastralParcelLayer],
+            ".shp",
         )
         self.description = "some data from a place on teh internet"
         self.real_id = "inspireid"
 
-    def table_name_and_ogr_layer_to_geom(self, _table_name: str, _info) -> str:
-        return "POLYGON"
+    def table_name_to_ogr_layer_names(self, _table_name: str, info) -> list[str]:
+        """Return OGR layer names for the given table, sourced from the info model.
 
-    def table_name_to_ogr_layer_names(self, _kc: str, info) -> list[str]:
+        The table name is ignored — all layers defined in info are returned
+        regardless of which table is being processed.
+        """
         # Regardless of name, we map all to
         return [x.name for x in info.layers]
 
-    def extract_files(self, main_file: str) -> tuple[str, list[str]]:
-        tmpdir = self.unzip_to_folder(main_file)
+    def extract_files(self, tmpdir:str, main_file: str) -> list[str]:
+        """Unzip the main archive and any nested zips, then locate BNG shapefiles.
+
+        Returns a (tmpdir, shp_files) tuple where shp_files is the list of
+        absolute paths to all ``*_bng.shp`` files found in the extracted tree.
+        """
+        self.unzip_to_folder(tmpdir, main_file)
         for i in glob.glob("**/*.zip", root_dir=tmpdir, recursive=True):
             found = os.path.join(tmpdir, i)
             with zipfile.ZipFile(found, "r") as zip_ref:
                 zip_ref.extractall(tmpdir)
         shp_files = glob.glob("**/*_bng.shp", root_dir=tmpdir, recursive=True)
-        real_ship = [os.path.join(tmpdir, x) for x in shp_files]
-        return (tmpdir, real_ship)
+        return shp_files
 
     def poll_data(self) -> None:
         """Return the path to the OS Open Roads zip archive, downloading if needed."""
-        self.args.file = (
-            "/var/folders/pl/bg9w9yp95nb4d933hm3633zh0000gp/T/tmph4agar7l/all_files.zip"
-        )
-
-        #t = tempfile.mkdtemp()
-        #files = download_files(t)
-        #allzip = os.path.join(t, "all_files.zip")
-        #with zipfile.ZipFile(allzip, "w") as zip_me:
-        #    for file in files:
-        #        zip_me.write(
-        #            file,
-        #            compress_type=zipfile.ZIP_DEFLATED,
-        #            arcname=os.path.basename(file),
-        #        )
-        #self.args.file = allzip
+        t = tempfile.mkdtemp()
+        files = download_files(t)
+        allzip = os.path.join(t, "all_files.zip")
+        with zipfile.ZipFile(allzip, "w") as zip_me:
+            for file in files:
+                zip_me.write(
+                    file,
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    arcname=os.path.basename(file),
+                )
+        self.args.file = allzip
 
 
 if __name__ == "__main__":
