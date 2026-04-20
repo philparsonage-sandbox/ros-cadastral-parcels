@@ -6,21 +6,19 @@ to name the target PostGIS table.
 
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy import String
-from sandbox_ingest import base_definitions
-
-DATA_SOURCE: str = "ros_inspire"
-
+from sandbox_ingest import base_definitions, geo_definitions
+import info
 
 class CadastralParcel(
-    base_definitions.generate_base(DATA_SOURCE),  # type: ignore[misc]
+    base_definitions.generate_base(info.provider, info.source),  # type: ignore[misc]
     SQLModel,
-    base_definitions.generate_polygon(),  # type: ignore[misc]
+    geo_definitions.generate_polygon(),  # type: ignore[misc]
     table=True,
 ):
     """A cadastral parcel"""
 
-    __tablename__ = DATA_SOURCE + "_cadastral_parcels"
-    __description__ = "blah blah blah"
+    __tablename__ = "_".join([info.provider.name, info.source.name])
+    __description__ = __doc__
     id: str | None = Field(
         default=None,
         sa_column=Column(String, primary_key=True, info={"source": "inspireid"}),
@@ -33,9 +31,3 @@ class CadastralParcel(
         default=None,
         sa_column=Column(String(3), nullable=True, info={"source": "county"}),
     )
-    # polygon: base_definitions.WKBElementType | None = Field(
-    #    default=None,
-    #    sa_column=Column(
-    #        Geometry("POLYGON"), info={"source": "wkb_geometry"}
-    #    ),
-    # )

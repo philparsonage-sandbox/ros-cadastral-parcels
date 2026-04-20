@@ -15,6 +15,9 @@ sandbox_ingest = { path = "../ingest-prototype", editable = true }
 [tool.mypy]
 mypy_path = "../ingest-prototype"
 
+[tool.uv]
+config-settings = { editable_mode = "compat" }
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",

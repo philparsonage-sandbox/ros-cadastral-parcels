@@ -1,15 +1,7 @@
-"""ROS Cadastral Parcels downloader and PostgreSQL updater.
-
-Uses Playwright to download all datasets from
-https://ros-inspire.themapcloud.com/, then ingests them into a PostGIS table.
-"""
+"""Playwright-based downloader for https://ros-inspire.themapcloud.com/."""
 
 import json
-import os
 import sys
-import zipfile
-import glob
-import tempfile
 from pathlib import Path
 
 from playwright.sync_api import (
@@ -19,9 +11,6 @@ from playwright.sync_api import (
     Playwright,
     TimeoutError as PlaywrightTimeoutError,
 )
-from sandbox_ingest import OGRUpdater
-import ros_cadastral_parcels_definition
-from ros_cadastral_parcels_model import ROSCadastralParcelsInfo, CadastralParcelLayer
 
 TARGET_URL = "https://ros-inspire.themapcloud.com/"
 
@@ -241,62 +230,3 @@ def download_files(download_dir: str | Path) -> list[str]:
 
         browser.close()
         return saved_files
-
-
-class ParcelUpdater(OGRUpdater):
-    """Updater that downloads OS Open Roads (GML3) and ingests it."""
-
-    def __init__(self) -> None:
-        """Initialise with a table name, file path, and connection defaults."""
-        OGRUpdater.__init__(
-            self,
-            ros_cadastral_parcels_definition.DATA_SOURCE,
-            ROSCadastralParcelsInfo,
-            [ros_cadastral_parcels_definition.CadastralParcel],
-            [CadastralParcelLayer],
-            ".shp",
-        )
-        self.description = "some data from a place on teh internet"
-        self.real_id = "inspireid"
-
-    def table_name_to_ogr_layer_names(self, _table_name: str, info) -> list[str]:
-        """Return OGR layer names for the given table, sourced from the info model.
-
-        The table name is ignored — all layers defined in info are returned
-        regardless of which table is being processed.
-        """
-        # Regardless of name, we map all to
-        return [x.name for x in info.layers]
-
-    def extract_files(self, tmpdir:str, main_file: str) -> list[str]:
-        """Unzip the main archive and any nested zips, then locate BNG shapefiles.
-
-        Returns a (tmpdir, shp_files) tuple where shp_files is the list of
-        absolute paths to all ``*_bng.shp`` files found in the extracted tree.
-        """
-        self.unzip_to_folder(tmpdir, main_file)
-        for i in glob.glob("**/*.zip", root_dir=tmpdir, recursive=True):
-            found = os.path.join(tmpdir, i)
-            with zipfile.ZipFile(found, "r") as zip_ref:
-                zip_ref.extractall(tmpdir)
-        shp_files = glob.glob("**/*_bng.shp", root_dir=tmpdir, recursive=True)
-        return shp_files
-
-    def poll_data(self) -> None:
-        """Return the path to the OS Open Roads zip archive, downloading if needed."""
-        t = tempfile.mkdtemp()
-        files = download_files(t)
-        allzip = os.path.join(t, "all_files.zip")
-        with zipfile.ZipFile(allzip, "w") as zip_me:
-            for file in files:
-                zip_me.write(
-                    file,
-                    compress_type=zipfile.ZIP_DEFLATED,
-                    arcname=os.path.basename(file),
-                )
-        self.args.file = allzip
-
-
-if __name__ == "__main__":
-    u = ParcelUpdater()
-    u.process()
